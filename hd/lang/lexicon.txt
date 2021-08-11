@@ -5134,7 +5134,7 @@ tr: Adına göre liste
 
     descendants tree
 co: arburu di discendenza
-de: Nachfahren-Baum
+de: Nachkommen-Baum
 en: descendants tree
 fr: arbre de descendance
 pt: árvore de descendentes
