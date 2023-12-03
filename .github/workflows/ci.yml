@@ -2,10 +2,10 @@ name: build
 on:
   pull_request:
     branches:
-      - master
+      - build-fp
   push:
     branches:
-      - master
+      - build-fp
 jobs:
   build:
     strategy:
