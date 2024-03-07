@@ -96,7 +96,7 @@
 %end;
 %define;sosa(ccc)
   %reset_count;
-  <li class="mt-1"><span class="fa-li"><i class="far fa-dot-circle text-success"></i></span>
+  <li class="mt-1"><span class="fa-li"><i class="far fa-circle-dot text-success"></i></span>
     %if;(sosa=1)[*Sosa 1]
     %else;
       %apply;a_of_b%with;<a href="%prefix;%sosa_link;">[Sosa] %sosa;</a> – %nn;
@@ -126,7 +126,7 @@
   <a href="%prefix;em=R&et=S&ei=%index;&i=%sosa_ref.index;&dag=on"
 %( autre possibilité %prefix;&m=NG&em=R&et=A&ei=%index;&select=%sosa_ref.index;&spouse=on&long=on" %)
     title="[*link between] %self; [and] %sosa_ref;">
-    <i class="fas fa-%if;(l1=0)child%else;user-friends%end;"></i></a>
+    <i class="fas fa-%if;(l1=0)child%else;user-group%end;"></i></a>
 %end;
 %define;from_sosa(ccc)
   %if;(browsing_with_sosa_ref and has_parents)
@@ -277,9 +277,9 @@
       <li title="[*birth]">
         <span class="fa-li"><i class="fas fa-baby"></i></span>
         %if;has_birth_date;[*born]s %on_birth_date;
-          %if;has_birth_place; - %birth_place;%end;
+          %if;has_birth_place; [in (place)] %birth_place;%end;
         %else;
-          %if;has_birth_place;[*born]s - %birth_place;
+          %if;has_birth_place;[*born]s [in (place)] %birth_place;
           %end;
         %end;
       </li>
@@ -294,9 +294,9 @@
       <li title="[*baptism]">
         <span class="fa-li"><i class="fas fa-dove"></i></span>
         %if;has_baptism_date;[*baptized]s %on_baptism_date;
-            %if;has_baptism_place; - %baptism_place;%end;
+            %if;has_baptism_place; [in (place)] %baptism_place;%end;
         %else;
-          %if;has_baptism_place;[*baptized]s - %baptism_place;
+          %if;has_baptism_place;[*baptized]s [in (place)] %baptism_place;
           %end;
         %end;
       </li>%nl;
@@ -306,7 +306,7 @@
         <span class="fa-li"><i class="fas fa-skull-crossbones"></i></span>
         %apply;capitalize(died)
         %if;has_death_date; %on_death_date;%end;
-        %if;has_death_place; - %death_place;%end;
+        %if;has_death_place; [in (place)] %death_place;%end;
         %if;(has_linked_page.DEATH and linked_page.DEATH!="") (%linked_page.DEATH;)%end;</li>%nl;
     %end;
     %if;(is_buried or is_cremated)
@@ -314,11 +314,11 @@
         <span class="fa-li"><i class="fas fa-cross"></i></span>
         %if;is_buried;[*buried]s
           %if;has_burial_date; %on_burial_date;%end;
-          %if;has_burial_place; - %burial_place;%end;
+          %if;has_burial_place; [in (place)] %burial_place;%end;
         %end;
         %if;is_cremated;[*cremated]s
           %if;has_cremation_date; %on_cremation_date;%end;
-          %if;has_cremation_place; - %cremation_place;%end;
+          %if;has_cremation_place; [in (place)] %cremation_place;%end;
         %end;
       </li>%nl;
     %end;
@@ -348,7 +348,7 @@
       <li>%apply;capitalize(linked_page.OCCU)</li>%nl;
     %end;
     %if;(has_consanguinity and b.show_consang!="no")
-      <li class="mt-1" title="[*consanguinity]"><span class="fa-li"><i class="fas fa-percentage"></i></span>
+      <li class="mt-1" title="[*consanguinity]"><span class="fa-li"><i class="fas fa-percent"></i></span>
         %if;(cancel_links)
           [*consanguinity][:] %consanguinity;
         %else;

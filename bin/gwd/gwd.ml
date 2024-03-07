@@ -1127,6 +1127,11 @@ let make_conf from_addr request script_name env =
       if x = "" then !default_lang else x
     with Not_found -> !default_lang
   in
+  let browser_lang =
+    if !choose_browser_lang then http_preferred_language request
+    else ""
+  in
+  let default_lang = if browser_lang = "" then default_lang else browser_lang in
   let vowels =
     match List.assoc_opt "vowels" base_env with
     | Some l ->
@@ -1210,7 +1215,9 @@ let make_conf from_addr request script_name env =
        end;
      lang = if lang = "" then default_lang else lang;
      vowels=vowels;
-     default_lang = default_lang; default_sosa_ref = default_sosa_ref;
+     default_lang = default_lang;
+     browser_lang = browser_lang;
+     default_sosa_ref = default_sosa_ref;
      multi_parents =
        begin try List.assoc "multi_parents" base_env = "yes" with
          Not_found -> false
@@ -1265,7 +1272,9 @@ let make_conf from_addr request script_name env =
          begin try List.assoc "no_note_for_visitor" base_env = "yes" with
            Not_found -> false
          end;
-     bname = base_file; env = env; senv = [];
+     bname = base_file;
+     nb_of_persons = -1;
+     env = env; senv = [];
      cgi_passwd = ar.ar_passwd;
      henv =
        (if not !(Wserver.cgi) then []
@@ -1308,9 +1317,9 @@ let make_conf from_addr request script_name env =
        | _, _ -> (Filename.concat "gw" "images"));
      etc_prefix = (
        match !gw_prefix, !etc_prefix with
-       | gw_p, st_p when gw_p <> "" && st_p = "" ->
+       | gw_p, etc_p when gw_p <> "" && etc_p = "" ->
            String.concat Filename.dir_sep [ gw_p; "etc" ]
-       | _, st_p when st_p <> "" ->  st_p
+       | _, etc_p when etc_p <> "" ->  etc_p
        | _, _ -> (Filename.concat "gw" "etc"));
      cgi;
      output_conf;
@@ -1776,16 +1785,30 @@ let geneweb_server () =
         Some addr -> addr
       | None -> try Unix.gethostname () with _ -> "computer"
     in
-      Printf.eprintf "GeneWeb %s - " Version.txt;
+      Printf.eprintf "GeneWeb %s - " Version.ver;
       if not !daemon then
         begin
           Printf.eprintf "Possible addresses:\n\
-                   http://localhost:%d/base\n\
-                   http://127.0.0.1:%d/base\n\
-                   http://%s:%d/base\n"
+                  http://localhost:%d/base\n\
+                  http://127.0.0.1:%d/base\n\
+                  http://%s:%d/base\n"
             !selected_port !selected_port hostn !selected_port;
           Printf.eprintf "where \"base\" is the name of the database\n\
-                   Type “Ctrl+C” to stop the service\n"
+                   Type “Ctrl+C” to stop the service\n";
+          if !debug then ( (* taken from Michel Normand commit 1874dcbf7 *)
+          Printf.eprintf "gwd parameters (after GWPARAM.init & cache_lexicon):\n";
+          Printf.eprintf "  source: %s\n" Version.src;
+          Printf.eprintf "  branch: %s\n" Version.branch;
+          Printf.eprintf "  commit: %s\n" Version.commit_id;
+          Printf.eprintf "  gwd: %s\n" Sys.argv.(0);
+          Printf.eprintf "  current_dir_name: %s\n" (Sys.getcwd ());
+          Printf.eprintf "  gw_prefix: %s\n" !gw_prefix;
+          Printf.eprintf "  etc_prefix: %s\n" !etc_prefix;
+          Printf.eprintf "  images_prefix: %s\n" !images_prefix;
+          Printf.eprintf "  images_dir: %s\n" !images_dir;
+          List.iter
+            (fun a -> Printf.eprintf "  secure asset: %s\n" a) (Secure.assets ());
+          Printf.eprintf "TODO: how to print content of conf ?\n";)
         end;
       flush stderr;
       if !daemon then
@@ -1954,7 +1977,8 @@ let arg_plugins opt doc =
   )
 
 let print_version_commit () =
-  Printf.printf "Geneweb version %s\nBuild from %s\nLast commit %s\n" Info.ver Info.src Info.id;
+  Printf.printf "Geneweb version %s\nRepository %s\n" Version.ver Version.src;
+  Printf.printf "Branch %s\nLast commit %s\n" Version.branch Version.commit_id;
   exit 0
 
 let main () =
@@ -2028,6 +2052,12 @@ let main () =
   arg_parse_in_file (chop_extension Sys.argv.(0) ^ ".arg") speclist anonfun usage;
   Arg.parse speclist anonfun usage;
   Geneweb.GWPARAM.syslog := GwdLog.syslog;
+  let gwd_cmd =
+    Array.fold_left (fun acc arg ->
+      if arg.[0] = '-' then acc ^ "<br><b>" ^ arg ^ "</b> "
+      else acc ^ arg) "" Sys.argv
+  in
+  Geneweb.GWPARAM.gwd_cmd := gwd_cmd;
   List.iter register_plugin !plugins ;
   !GWPARAM.init () ;
   cache_lexicon () ;

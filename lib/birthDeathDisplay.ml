@@ -437,7 +437,7 @@ let print_population_pyramid conf base =
     Output.print_sstring conf "<td>";
     if doit then (
       Output.print_sstring conf {|<img src="|};
-      Output.print_string conf (Image.prefix conf);
+      Output.print_sstring conf (Util.images_prefix conf);
       Output.print_sstring conf "/";
       Output.print_string conf iname;
       Output.print_sstring conf {|" alt="|};
@@ -492,7 +492,7 @@ let print_population_pyramid conf base =
         Output.print_sstring conf {|" height="22">|})
     in
     aux_img nb_men
-      (Adef.encoded (Filename.concat conf.images_prefix "pyr_male.png"));
+      (Adef.encoded (Filename.concat (Util.images_prefix conf) "pyr_male.png"));
     Output.print_sstring conf
       {|</td></tr></table></td><td align="center" class="pyramid_center">|};
     if i = nb_intervals then Output.print_sstring conf "&nbsp;"
@@ -500,7 +500,8 @@ let print_population_pyramid conf base =
     Output.print_sstring conf
       {|</td><td align="left"><table cellspacing="0" cellpadding="0"><tr><td>|};
     aux_img nb_wom
-      (Adef.encoded (Filename.concat conf.images_prefix "pyr_female.png"));
+      (Adef.encoded
+         (Filename.concat (Util.images_prefix conf) "pyr_female.png"));
     Output.print_sstring conf {|</td><td class="pyramid_nb">&nbsp;|};
     if nb_wom <> 0 then Output.print_sstring conf (string_of_int nb_wom);
     Output.print_sstring conf "</td></tr></table></td><td>&nbsp;</td>\n";
@@ -513,8 +514,9 @@ let print_population_pyramid conf base =
   Output.print_sstring conf "</div><p>";
   let sum_men = Array.fold_left ( + ) 0 men in
   let sum_wom = Array.fold_left ( + ) 0 wom in
-  transl conf "number of living persons:"
+  transl conf "number of living persons"
   |> Utf8.capitalize_fst |> Output.print_sstring conf;
+  Output.print_sstring conf (transl conf ":");
   Output.print_sstring conf " ";
   Output.print_sstring conf (string_of_nb (sum_men + sum_wom));
   Output.print_sstring conf {|.</p><form method="get" action="|};

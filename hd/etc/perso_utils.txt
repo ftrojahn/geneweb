@@ -114,7 +114,7 @@
 %end;
 
 %define;image_sosa(xxx,yyy)
-  <span class="far fa-dot-circle text-success mr-1" title="%if;(yyy!=1)[*direct ancestor of %s:::xxx] – [*Sosa] yyy%end;"></span>%nn;
+  <span class="far fa-circle-dot text-success mr-1" title="%if;(yyy!=1)[*direct ancestor of %s:::xxx] – [*Sosa] yyy%end;"></span>%nn;
 %end;
 
 %define;nav_with_sosa_ref(xxx)
@@ -231,7 +231,7 @@
   %if;(xx.index=central_index)<b>%xx;</b>%else;
     %if;(cancel_links or xx.is_restricted)%xx;
     %else;<a %apply;ext_link("xx") href="%xx.bname_prefix;%xx.access;" %nn;
-        class="%if;(xx.sex=0)male%elseif;(xx.sex=1)female%else;neuter%end;-underline">%xx;</a>
+        class="%if;(xx.sex=0)male%elseif;(xx.sex=1)female%else;neuter%end;-underline">%xx;</a>%nn;
     %end;
   %end;
   <span title="%if;xx.computable_age;%xx.age;%elseif;xx.computable_death_age;%xx.death_age;%end;"
@@ -253,9 +253,9 @@
         %else;%if;(xx.death_date.year="") mr-4%end;
         %end;
       %end;%)"
-       title="%if;wizard;[*modify::] %xx.first_name;%if;(xx.occ!="0").%xx.occ;%end; %xx.surname;&#10;&#10;%end;
+       title="%if;wizard;[*modify::] %xx.first_name;%if;(xx.occ!="0").%xx.occ;%end; %xx.surname;%end;
                %if;(xx.computable_age or xx.computable_death_age)
-                 %if;xx.computable_age;%xx.age;%elseif;xx.computable_death_age;%xx.death_age;%end;
+                 %if;xx.computable_age; (%xx.age;)%elseif;xx.computable_death_age; (%xx.death_age;)%end;
                %end;">%nn;
     %if;(xx.dates!="")%xx.dates;%nn;
     %elseif;(wizard and not cancel_links)-%nn;
@@ -276,9 +276,9 @@
   %if;(wizard and not cancel_links)
   <a href="%prefix;m=MOD_IND&i=%xx.index;">%end;
   <span class="text-nowrap font-italic"
-  title="%if;wizard;[*modify::] %xx.first_name;%if;(xx.occ!="0").%xx.occ;%end; %xx.surname;&#10;&#10;%end;
-        %if;(xx.computable_age);%xx.age;%elseif;xx.computable_death_age;%xx.death_age;%end;"%nn;
-  >%xx.dates;</span>%if;(wizard and not cancel_links)</a>%end;%nn;
+    title="%if;wizard;[*modify::] %xx.first_name;%if;(xx.occ!="0").%xx.occ;%end; %xx.surname;%end;
+           %if;(xx.computable_age) (%xx.age;)%elseif;xx.computable_death_age; (%xx.death_age;)%end;">%nn;
+    %xx.dates;</span>%if;(wizard and not cancel_links)</a>%end;%nn;
 %end;
 
 %define;short_display_person_f(xx)
@@ -348,11 +348,11 @@
     %else;
       %if;xx.has_baptism_place;, %apply;nth([baptized],xx.sex) - %xx.baptism_place;%end;
     %end;
-    %if;xx.computable_age;, [age] : %xx.age;%end;
+    %if;xx.computable_age;, [age][:] %xx.age;%end;
     %if;xx.is_dead;, %xx.died;
       %if;xx.has_death_date; %xx.on_death_date;%end;
       %if;xx.has_death_place; - %xx.death_place;%end;
-      %if;xx.computable_death_age; [age at death:] %xx.death_age;%end;
+      %if;xx.computable_death_age; [aged] %xx.death_age;%end;
     %end;
     %if;xx.is_buried; , %apply;nth([buried],xx.sex)%sp;
       %if;xx.has_burial_date; %xx.on_burial_date;%end;
@@ -427,7 +427,7 @@
         %if;xx.has_death_date; %xx.on_death_date;%end;
         %if;xx.has_death_place; - %xx.death_place;%end;
         %if;(xx.has_linked_page.DEATH and xx.linked_page.DEATH !="") %xx.linked_page.DEATH;%end;
-        %if;xx.computable_death_age;, [age at death:] %xx.death_age;%end;</li>%nl;
+        %if;xx.computable_death_age; [aged] %xx.death_age;%end;</li>%nl;
         %if;xx.is_buried;
           <li>%apply;capitalize(nth([buried],xx.sex))
           %if;xx.has_burial_date; %xx.on_burial_date;%end;
@@ -484,7 +484,7 @@
     %if;xx.is_dead;, %xx.died;
       %if;xx.has_death_date; %xx.on_death_date;%end;
       %if;xx.has_death_place; - %xx.death_place;%end;
-      %if;xx.computable_death_age; [age at death:] %xx.death_age;%end;
+      %if;xx.computable_death_age; [aged] %xx.death_age;%end;
       %if;xx.is_buried; , %apply;nth([buried],xx.sex)%sp;
         %if;xx.has_burial_date; %xx.on_burial_date;%end;
         %if;xx.has_burial_place; - %xx.burial_place;%end;
@@ -540,8 +540,8 @@
   %end;
   %let;marr_text;
     %apply;rel_date_place%with;%xx.sex;%and;
-      %if;(on_marriage_date!="") %marriage_date;%end;
-      %if;(marriage_place!=""), %marriage_place;%end;%end;%in;
+      %if;(on_marriage_date!="") %on_marriage_date;%end;
+      %if;(marriage_place!="") [in (place)] %marriage_place;%end;%end;%in;
   %if;(yy=1)%apply;capitalize(marr_text)%else;%marr_text;%end;
   %if;wedding_birthday; ([happy birthday to them!])%end;
 %end;
@@ -549,7 +549,7 @@
 %define;display_date_marriage_parent(xx)
   %foreach;xx.mother.family;
     %if;(spouse.access=xx.father.access)
-      %if;(marriage_date.year!="")
+      %if;((wizard or friend) and marriage_date.year!=""))
         %if;(wizard and not cancel_links)<a href="%prefix&m=MOD_FAM&i=%family.index;&ip=%index;" title="[modify::family/families]0">%end;%nn;
         %family.date_s;%nn;
         %if;(wizard and not cancel_links)</a>%end;
@@ -583,7 +583,7 @@
           <br><img src="%images_prefix;1pixel.png" width="13" height="13" alt="1px">
           <em>%child;%child.title;%child.dates;</em>
         %end;
-        <span class="ml-1">%apply;long_married_f("child", "lower")</span>
+        <span class="ml-1">%apply;married_to("child", "lower")</span>
         %apply;short_display_person("spouse")
       %end;
     %end;
@@ -616,7 +616,7 @@
           <br><img src="%images_prefix;1pixel.png" width="13" height="13" alt="" title="">
           <em>%child;%child.title;%child.dates;</em>
         %end;
-        %sp;<em>%apply;long_married_f("child", "lower")</em>
+        %sp;<em>%apply;married_to("child", "lower")</em>
         %apply;short_display_person_f("spouse")
       %end;
     %end;
@@ -671,8 +671,10 @@
    personne d'où l'affichage sans nb d'enfants si la personne n'a qu'un mariage %)
 
 %define;detail_wedding()
-  %apply;type_wedding()
-  %if;(marriage_date.year != "")%marriage_date.year;%end;
+  %if;(wizard or friend)
+    %apply;type_wedding()
+    %if;(marriage_date.year != "")%marriage_date.year;%end;
+  %end;
 %end;
 
 %define;detail_children()
@@ -838,15 +840,16 @@
 %let;timeline;%if;(count>0)yes%else;no%end;%in;
 
 %define;rm(ccc,ttt)
-  %if;(e.ccc="on")<a role="button" class="stretched-link" href="%url_set.ccc;"
+  %if;(e.ccc="on")<a role="button" class="stretched-link" href="%apply;url_set%with;ccc%end;"
     title="ttt&#010;&#010; [*remove %s column:::ccc]"></a>%end;
 %end;
-%define;rm2(ccc,ddd,ttt)
-  %if;(e.ccc="on" and e.ddd="on")<a role="button" class="stretched-link" href="%url_setx.ccc.ddd;"
-    title="ttt&#010;&#010; [*remove %s column:::ccc+ddd]"></a>%end;
+%define;rm3(ccc,ddd,eee,ttt)
+  %if;(e.ccc="on" and e.ddd="on")<a role="button" class="stretched-link"
+    href="%apply;url_set%with;ccc/ddd%if;("eee"!="")/eee%end;%end;"
+    title="ttt&#010;&#010; [*remove %s column:::ccc+ddd+eee]"></a>%end;
 %end;
 %define;table_header()
-  <tr class="align-middle descends_table_header">
+  <thead><tr class="align-middle">
     %reset_count;
     %if;(e.num="on")
       <th scope="col" class="text-center align-middle position-relative" rowspan="2">№%nn;
@@ -857,7 +860,7 @@
     %incr_count;
     %if;(e.birth="on" and e.birth_place="on")
       <th class="text-center position-relative" colspan="2">[*birth]
-        %apply;rm2("birth","birth_place","")</th>
+        %apply;rm3("birth","birth_place","",[*birth])</th>
       %incr_count;%incr_count;
     %elseif;(e.birth="on" and e.birth_place!="on")
       <th scope="col" class="text-center align-middle position-relative" rowspan="2">[*date of birth]
@@ -870,7 +873,7 @@
     %end;
     %if;(e.baptism="on" and e.baptism_place="on")
       <th class="text-center position-relative" colspan="2">[*baptism]
-        %apply;rm2("baptism","baptism_place","")</th>
+        %apply;rm3("baptism","baptism_place","","")</th>
       %incr_count;%incr_count;
     %elseif;(e.baptism="on" and e.baptism_place!="on")
       <th scope="row" class="text-center align-middle position-relative" rowspan="2">[*date of baptism]
@@ -882,7 +885,7 @@
       %incr_count;
     %end;
     %if;(e.marr="on" and (e.m="A" or (e.m="D" and e.t="H")))
-      <th scope="col" class="pl-2 align-middle" rowspan="2">[*spouse/spouses]1
+      <th scope="col" class="pl-2 align-middle position-relative" rowspan="2">[*spouse/spouses]1
         %apply;rm("marr","")</th>
       %incr_count;
     %end;
@@ -891,8 +894,8 @@
       <th class="text-center position-relative"
         colspan="%if;(e.marr_date="on" and e.marr_place="on" and e.child="on")3%else;2%end;">%nn;
         [*marriage/marriages]0
-        <a role="button" class="stretched-link" href="%url_setx.marr_date.marr_place.child;"
-          title="[*remove %s column:::marr_date+marr_place+child]"%(TODO:filter if only 2%)></a></th>
+        %apply;rm3%with;marr_date%and;marr_place%and;child%and;%end;
+      </th>
       %if;(e.marr_date="on" and e.marr_place="on" and e.child="on")%incr_count;%end;
       %incr_count;%incr_count;
     %elseif;(e.marr_date="on" and e.marr_place!="on" and e.child!="on")
@@ -911,7 +914,7 @@
     %end;
     %if;(e.death="on" and e.death_place="on")
       <th class="text-center position-relative" colspan="2">[*death]
-        %apply;rm2("death","death_place",[*death])</th>
+        %apply;rm3("death","death_place","",[*death])</th>
       %incr_count;%incr_count;
     %elseif;(e.death="on" and e.death_place!="on")
       <th scope="col" class="text-center position-relative" rowspan="2">[*date of death]
@@ -924,7 +927,7 @@
     %end;
     %if;(e.burial="on" and e.burial_place="on")
       <th class="text-center position-relative" colspan="2">[*burial]
-        %apply;rm2("burial","burial_place","")</th>
+        %apply;rm3("burial","burial_place","","")</th>
       %incr_count;%incr_count;
     %elseif;(e.burial="on" and e.burial_place!="on")
       <th scope="col" class="text-center position-relative" rowspan="2">[*date of burial]
@@ -946,7 +949,7 @@
       %incr_count;
     %end;
     </tr>
-    <tr class="descends_table_header">
+    <tr>
     %if;(e.birth="on" and e.birth_place="on")
       <th class="text-right pr-2 position-relative">[*date/dates]0
         %apply;rm("birth",[*date of birth])</th>
@@ -987,5 +990,5 @@
       <th class="pl-2 position-relative">[*place/places]0
         %apply;rm("burial_place",[*burial place])</th>
     %end;
-  </tr>
+  </tr></thead>
 %end;

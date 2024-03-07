@@ -143,6 +143,13 @@ let url_aux ?(pwd = true) conf =
 
 let order =
   [
+    "b";
+    "lang";
+    "templ";
+    "iz";
+    "pz";
+    "nz";
+    "ocz";
     "m";
     "em";
     "t";
@@ -151,12 +158,6 @@ let order =
     "p";
     "n";
     "oc";
-    "iz";
-    "pz";
-    "nz";
-    "ocz";
-    "lang";
-    "templ";
     "wide";
     "im";
     "sp";
@@ -164,26 +165,52 @@ let order =
     "v";
   ]
 
-let reorder conf env =
-  let env1, ok =
-    List.fold_left
-      (fun (acc1, acc2) k ->
-        if
-          List.mem_assoc k env
-          && (k <> "lang"
-             || (k = "lang" && List.assoc k env <> conf.default_lang))
-        then (Format.sprintf "%s=%s" k (List.assoc k env) :: acc1, k :: acc2)
-        else (acc1, acc2))
-      ([], []) order
+let reorder conf url_env =
+  let new_lang =
+    match List.assoc_opt "lang" url_env with Some l1 -> l1 | None -> ""
   in
+  let keep_lang =
+    (* same condition in Util.commd and copyr.txt *)
+    conf.default_lang <> new_lang
+  in
+  (* process evars from order *)
+  let env1, ok =
+    let rec loop (acc1, acc2) order =
+      match order with
+      | [] -> (acc1, acc2)
+      | k :: order ->
+          let v =
+            match List.assoc_opt k url_env with Some v -> v | None -> ""
+          in
+          if
+            List.mem_assoc k url_env
+            &&
+            match (k, v) with
+            | "lang", _ -> keep_lang
+            | "oc", v when v = "" || v = "0" -> false
+            | "ocz", v when v = "" || v = "0" -> false
+            | _, v when v <> "" -> true
+            | _, _ -> false
+          then loop (Format.sprintf "%s=%s" k v :: acc1, k :: acc2) order
+          else loop (acc1, acc2) order
+    in
+    loop ([], []) order
+  in
+  (* process other evars from env *)
   let env2 =
     List.fold_left
       (fun acc (k, v) ->
-        if (not (List.mem k ok)) && k <> "lang" && v <> conf.default_lang then
-          Format.sprintf "%s=%s" k v :: acc
-        else acc)
-      [] env
+        if
+          List.mem k ok
+          || (k = "lang" && not keep_lang)
+          || ((k = "oc" || k = "ocz") && (v = "" || v = "0"))
+          || v = ""
+        then acc
+        else Format.sprintf "%s=%s" k v :: acc)
+      [] url_env
   in
+  if List.mem "lang=fr" env1 then Printf.eprintf "Lang in env1\n";
+  if List.mem "lang=fr" env2 then Printf.eprintf "Lang in env2\n";
   String.concat "&" (List.rev env1 @ List.rev env2)
 
 let find_sosa_ref conf =
@@ -204,8 +231,13 @@ let find_sosa_ref conf =
       | Some s when s <> "" -> s
       | _ -> "No sosa ref")
 
-(* when str = "" url_set_aux can reset several evar from evar_l in one call *)
-let url_set_aux conf evar_l str (iz, pz, nz, ocz) =
+(* url_set_aux can reset several evar from evar_l in one call *)
+let url_set_aux conf evar_l str_l =
+  let str_l =
+    List.mapi
+      (fun i _evar -> if i < List.length str_l then List.nth str_l i else "")
+      evar_l
+  in
   let href =
     match String.split_on_char '?' (Util.commd conf :> string) with
     | [] ->
@@ -213,115 +245,34 @@ let url_set_aux conf evar_l str (iz, pz, nz, ocz) =
         ""
     | s :: _l -> s
   in
-  match evar_l with
-  | [] ->
-      (* nouveau url_set; Le paramètre str contient un squelette de la nouvelle url *)
-      let evarl = String.split_on_char '&' str in
-      let new_env =
-        List.fold_left
-          (fun acc ev ->
-            let ev1 = String.split_on_char '=' ev in
-            if List.nth ev1 0 <> "" then
-              ( List.nth ev1 0,
-                if List.length ev1 > 1 then List.nth ev1 1 else "" )
-              :: acc
-            else acc)
-          [] evarl
-      in
-      let old_env = conf.henv @ conf.senv @ conf.env in
-      let old_env =
-        List.sort_uniq (fun (k1, _) (k2, _) -> compare k1 k2) old_env
-      in
-      (* done_env marks evar of new_env taken into account *)
-      let new_env', done_env =
-        List.fold_left
-          (fun (acc1, acc2) (k, v) ->
-            let v = Adef.as_string @@ v in
-            let k, v =
-              if (k = "oc" || k = "ocz") && v = "0" then (k, "") else (k, v)
-            in
-            let k, v =
-              if k = "lang" && v = conf.default_lang then (k, "") else (k, v)
-            in
-            match List.assoc_opt k new_env with
-            | Some v' ->
-                if v' <> "" then ((k, v') :: acc1, k :: acc2)
-                else (acc1, k :: acc2)
-            | None -> if v <> "" then ((k, v) :: acc1, acc2) else (acc1, acc2))
-          ([], []) old_env
-      in
-      (* add to new_env' evars of new_env which have not been taken into account *)
-      let new_env' =
-        new_env'
-        @ List.fold_left
-            (fun acc (k, v) ->
-              let k, v =
-                if k = "lang" && v = conf.default_lang then (k, "") else (k, v)
-              in
-              if List.mem k done_env || v = "" then acc else (k, v) :: acc)
-            [] new_env
-      in
-      Format.sprintf "%s?%s" href (reorder conf new_env')
-  | evar :: _l ->
-      (* rebuild the current url from conf.env, replacing &evar=xxx by &evar=str *)
-      (* if evar is not present in conf.env, it will be added at the end *)
-      let _fadd_evar =
-        match
-          List.find_opt
-            (fun (k, _) -> k = evar)
-            (conf.henv @ conf.senv @ conf.env)
-        with
-        | Some (_, _) -> false
-        | None -> true && str <> "" (* only if str <> "" *)
-      in
-      let kl = ref [] in
-      let conf_l = conf.henv @ conf.senv @ conf.env in
-      let conf_l = List.filter (fun (k, _v) -> k <> evar) conf_l in
-      let l =
-        List.filter_map
-          (fun (k, v) ->
-            (* provess all env variables in senv, henv, env *)
-            let v = Adef.as_string @@ v in
-            match (k, v) with
-            | "oc", "0" | "ocz", "0" -> None (* ignore occ null *)
-            | _, _ when List.mem k !kl -> None (* already done *)
-            | k, _ when List.mem k evar_l && k <> evar ->
-                (* there can be 1, 2 or 3 evar in evar_l *)
-                (* evar is the first one, which can be set to a new value *)
-                (* evar 2 and 3 are removed *)
-                None
-            | "lang", v when not (List.mem k evar_l) ->
-                (* lang not in evar list, ignore if default_lang *)
-                if v = conf.default_lang || v = "" then None
-                else (
-                  kl := k :: !kl;
-                  Some (k, v))
-            | "lang", v ->
-                (* lang in evar list, set it to str unless default_lang *)
-                let v = if str <> "" then str else v in
-                if v = conf.default_lang || v = "" then None
-                else (
-                  kl := k :: !kl;
-                  Some (k, v))
-            | k, _ when k = evar && str = "" ->
-                (* evar is set to "" -> ignore *)
-                None
-            | k, _ when k = evar && str <> "" ->
-                (* set evar to str if not empty *)
-                kl := k :: !kl;
-                Some (k, str)
-            | _, "" -> None (* empty *)
-            | _, _ ->
-                (* others *)
-                kl := k :: !kl;
-                Some (k, v))
-          conf_l
-      in
-      let l = if iz = "" then l else ("iz", iz) :: l in
-      let l = if pz = "" && nz = "" then l else ("pz", pz) :: ("nz", nz) :: l in
-      let l = if ocz = "" || ocz = "0" then l else ("ocz", ocz) :: l in
-      let l = if str = "" then l else (evar, str) :: l in
-      Format.sprintf "%s?%s" href (reorder conf l)
+  let conf_l = conf.henv @ conf.senv @ conf.env in
+  let k_l = List.map (fun (k, _v) -> k) conf_l in
+  let k_l = List.sort_uniq compare k_l in
+  let conf_l = List.map (fun k -> (k, List.assoc k conf_l)) k_l |> List.rev in
+  (* process evar_l *)
+  let url_env =
+    let rec loop i acc evar_l =
+      match evar_l with
+      | [] -> acc
+      | evar :: evar_l ->
+          let str = List.nth str_l i in
+          if str <> "" then loop (i + 1) ((evar, str) :: acc) evar_l
+          else loop (i + 1) acc evar_l
+    in
+    loop 0 [] evar_l
+  in
+  (* process the remainder of conf_l *)
+  let url_env =
+    let rec loop acc conf_l =
+      match conf_l with
+      | [] -> acc
+      | (k, _v) :: conf_l when List.mem k evar_l -> loop acc conf_l
+      | (k, v) :: conf_l -> loop ((k, Adef.as_string v) :: acc) conf_l
+    in
+    loop url_env conf_l
+  in
+  (* reorder *)
+  Format.sprintf "%s?%s" href (reorder conf url_env)
 
 let substr_start_aux n s =
   let len = String.length s in
@@ -336,6 +287,36 @@ let substr_start_aux n s =
   loop 0 n ""
 
 let rec eval_variable conf = function
+  | [ "lang"; "full" ] ->
+      let rec func x lst c =
+        match lst with
+        | [] -> "bad language code"
+        | hd :: tl ->
+            if hd = x then Util.transl_nth conf "!languages" c
+            else func x tl (c + 1)
+      in
+      func conf.lang Version.available_languages 0
+  | [ "bvar"; "list" ] ->
+      let is_duplicate key assoc_list =
+        let rec aux count = function
+          | [] -> count > 1
+          | (k, _) :: tl -> if k = key then aux (count + 1) tl else aux count tl
+        in
+        aux 0 assoc_list
+      in
+      let l =
+        List.sort (fun (k1, _v1) (k2, _v2) -> compare k1 k2) conf.base_env
+      in
+      List.fold_left
+        (fun acc (k, v) ->
+          let duplicate =
+            if is_duplicate k l then {| style="color:red"|} else ""
+          in
+          acc
+          ^ Format.sprintf "<b%s>%s</b>=%s<br>\n" duplicate k
+              (Util.escape_html v :> string))
+        "" l
+  | [ "gwd"; "arglist" ] -> !GWPARAM.gwd_cmd
   | [ "bvar"; v ] | [ "b"; v ] -> (
       try List.assoc v conf.base_env with Not_found -> "")
   | [ "connections"; "wizards" ] -> (
@@ -389,6 +370,16 @@ let rec eval_variable conf = function
       let amp = if prefix.[String.length prefix - 1] = '?' then "" else "&" in
       if str = "" then prefix
       else prefix ^ Printf.sprintf "%s%s=%s" amp evar str
+  | [ "random"; "init" ] ->
+      Random.self_init ();
+      ""
+  | [ "random"; "bits" ] -> (
+      try string_of_int (Random.bits ())
+      with Failure _ | Invalid_argument _ -> raise Not_found)
+  | [ "random"; s ] -> (
+      try string_of_int (Random.int (int_of_string s))
+      with Failure _ | Invalid_argument _ -> raise Not_found)
+  | "nb_of_persons" :: sl -> eval_int conf conf.nb_of_persons sl
   | [ "substr_start"; n; v ] -> (
       (* extract the n first characters of string v *)
       match int_of_string_opt n with
@@ -407,22 +398,24 @@ let rec eval_variable conf = function
   | "time" :: sl -> eval_time_var conf sl
   (* clear some variables in url *)
   (* set the first variable to a new value if <> "" *)
-  | [ "url_set_new"; url ] -> url_set_aux conf [] url ("", "", "", "")
-  | [ "url_set"; evar; str ] -> url_set_aux conf [ evar ] str ("", "", "", "")
-  | [ "url_set"; evarl ] ->
-      let evarl = String.split_on_char '_' evarl in
-      url_set_aux conf evarl "" ("", "", "", "")
-  | [ "url_set2"; evar1; evar2; str ] ->
-      url_set_aux conf [ evar1; evar2 ] str ("", "", "", "")
-  | [ "url_set_pz"; iz ] ->
-      url_set_aux conf [ "iz"; "pz"; "nz"; "ocz" ] "" (iz, "", "", "")
-  | [ "url_set_pz"; pz; nz; ocz ] ->
-      url_set_aux conf [ "iz"; "pz"; "nz"; "ocz" ] "" ("", pz, nz, ocz)
-  | "url_setx" :: evarl -> url_set_aux conf evarl "" ("", "", "", "")
+  | [ "url_set"; evar_l; str_l ] ->
+      let evar_l = String.split_on_char '_' evar_l in
+      let str_l = String.split_on_char '_' str_l in
+      url_set_aux conf evar_l str_l
+  | [ "url_set"; evar_l ] ->
+      let evar_l = String.split_on_char '_' evar_l in
+      url_set_aux conf evar_l []
   | [ "user"; "ident" ] -> conf.user
   | [ "user"; "name" ] -> conf.username
   | [ "user"; "key" ] -> conf.userkey
   | [ s ] -> eval_simple_variable conf s
+  | _ -> raise Not_found
+
+and eval_int conf n = function
+  | [ "hexa" ] -> Printf.sprintf "0x%X" n
+  | [ "octal" ] -> Printf.sprintf "0x%o" n
+  | [ "v" ] -> string_of_int n
+  | [] -> Mutil.string_of_int_sep (Util.transl conf "(thousand separator)") n
   | _ -> raise Not_found
 
 and eval_time_var conf = function
@@ -477,25 +470,26 @@ and eval_simple_variable conf = function
       let s = (s :> string) in
       if s = "" then s else s ^ Filename.dir_sep
   | "images_prefix" | "image_prefix" ->
-      let s =
-        if conf.cgi then Adef.escaped conf.images_prefix
-        else Adef.escaped "images"
-      in
-      let s = (s :> string) in
-      if s = "" then s else s ^ Filename.dir_sep
+      Util.images_prefix conf ^ Filename.dir_sep
   | "lang" -> conf.lang
+  | "lang_fallback" -> (
+      match List.assoc_opt conf.lang !Mutil.fallback with
+      | Some l -> l
+      | None -> "")
   | "default_lang" -> conf.default_lang
+  | "browser_lang" -> conf.browser_lang
   | "left" -> conf.left
   | "nl" -> "\n"
   | "nn" -> ""
   | "plugins" ->
       let l = List.map Filename.basename conf.plugins in
       String.concat "," l
+  | "bname" -> conf.bname
+  | "token" -> conf.cgi_passwd
+  | "bname_token" -> String.concat "_" [ conf.bname; conf.cgi_passwd ]
   | "prefix" -> (Util.commd conf :> string)
-  | "prefix_base" ->
-      (Util.commd ~pwd:false ~henv:false ~senv:false conf :> string)
-  | "prefix_base_password" ->
-      (Util.commd ~henv:false ~senv:false conf :> string)
+  | "prefix_base" -> (Util.commd ~pwd:false conf :> string)
+  | "prefix_base_password" -> (Util.commd conf :> string)
   | "prefix_no_iz" ->
       (Util.commd ~excl:[ "iz"; "nz"; "pz"; "ocz" ] conf :> string)
   | "prefix_no_templ" -> (Util.commd ~excl:[ "templ" ] conf :> string)
@@ -533,7 +527,12 @@ and eval_simple_variable conf = function
       String.concat "&" l
   | "url" -> url_aux ~pwd:true conf
   | "url_no_pwd" -> url_aux ~pwd:false conf
-  | "version" -> Version.txt
+  | "version" -> Version.ver
+  | "commit_id" -> Version.commit_id
+  | "commit_date" -> Version.commit_date
+  | "compil_date" -> Version.compil_date
+  | "branch" -> Version.branch
+  | "source" -> Version.src
   | "/" -> ""
   | _ -> raise Not_found
 
@@ -1115,7 +1114,7 @@ let print_copyright conf =
       Output.print_sstring conf "<div style=\"font-size: 80%\">\n";
       Output.print_sstring conf "<em>";
       Output.print_sstring conf "Copyright (c) 1998-2007 INRIA - GeneWeb ";
-      Output.print_sstring conf Version.txt;
+      Output.print_sstring conf Version.ver;
       Output.print_sstring conf "</em>";
       Output.print_sstring conf "</div>\n";
       Output.print_sstring conf "<br>\n")
@@ -1185,6 +1184,13 @@ let rec interp_ast :
             String.concat "" (eval_ast_list env ep astl)
         | "language_name", [ VVstring s ] ->
             Translate.language_name s (Util.transl conf "!languages")
+        | "url_set", [ VVstring s1 ] ->
+            let s1 = String.split_on_char '/' s1 in
+            url_set_aux conf s1 []
+        | "url_set", [ VVstring s1; VVstring s2 ] ->
+            let s1 = String.split_on_char '/' s1 in
+            let s2 = String.split_on_char '/' s2 in
+            url_set_aux conf s1 s2
         | "nth", [ VVstring s1; VVstring s2 ] ->
             let n = try int_of_string s2 with Failure _ -> 0 in
             Util.translate_eval (Util.nth_field s1 n)

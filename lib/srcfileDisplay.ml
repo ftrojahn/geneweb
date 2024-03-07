@@ -203,7 +203,7 @@ let macro conf base = function
         (List.assoc "base_notes_title" conf.base_env |> Util.escape_html
           :> Adef.safe_string)
       with Not_found -> Adef.safe "")
-  | 'o' -> (Image.prefix conf :> Adef.safe_string)
+  | 'o' -> Adef.safe (Util.images_prefix conf)
   | 'q' ->
       let r = count conf in
       string_of_int_sep_aux conf (r.welcome_cnt + r.request_cnt)
@@ -215,7 +215,7 @@ let macro conf base = function
       if (conf.wizard || conf.just_friend_wizard) && conf.user <> "" then
         Adef.safe (": " ^ conf.user)
       else Adef.safe ""
-  | 'v' -> Adef.safe Version.txt
+  | 'v' -> Adef.safe Version.ver
   | 'w' ->
       let s = Hutil.link_to_referer conf in
       if (s :> string) = "" then Adef.safe "&nbsp;" else s
@@ -513,12 +513,6 @@ let eval_var conf base env () _loc = function
           r.welcome_cnt
       in
       VVstring s
-  | [ "random"; "init" ] ->
-      Random.self_init ();
-      VVstring ""
-  | [ "random"; s ] -> (
-      try VVstring (string_of_int (Random.int (int_of_string s)))
-      with Failure _ | Invalid_argument _ -> raise Not_found)
   | [ "sosa_ref" ] -> (
       match get_env "sosa_ref" env with
       | Vsosa_ref v -> (

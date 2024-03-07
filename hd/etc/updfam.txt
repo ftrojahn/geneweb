@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="%lang;">
+<html lang="%lang;" id="updform">
 <head>
   <!-- $Id: updfam.txt v7.1 19/10/2023 15:14:38 $ -->
   <!-- Copyright (c) 1998-2007 INRIA -->
@@ -31,11 +31,11 @@
   <div class="container fixed-top" role="navigation">
     <nav class="navbar navbar-light bg-white justify-content-center" id="banner">
       <nav class="nav nav-pills nav-fill">
-        <a class="nav-item nav-link px-2 py-1" href="#family" title="[*parents]"><i class="fa fa-male fa-fw" aria-hidden="true"></i><i class="fa fa-female" aria-hidden="true"></i><span class="d-none d-md-inline-flex ml-1">[*parents]</span></a>
+        <a class="nav-item nav-link px-2 py-1" href="#family" title="[*parents]"><i class="fa fa-person fa-fw" aria-hidden="true"></i><i class="fa fa-person-dress" aria-hidden="true"></i><span class="d-none d-md-inline-flex ml-1">[*parents]</span></a>
         <a class="nav-item nav-link px-2 py-1" href="#events" title="[*event/events]1"><i class="fa fa-graduation-cap fa-fw" aria-hidden="true"></i><span class="d-none d-md-inline-flex ml-1">[*event/events]1</span></a>
         <a class="nav-item nav-link px-2 py-1" href="#children" title="[*child/children]1"><i class="fa fa-child fa-fw" aria-hidden="true"></i><span class="d-none d-md-inline-flex ml-1">[*child/children]1</span></a>
         <a class="nav-item nav-link px-2 py-1" href="#sources" title="[*source/sources]1"><i class="fa fa-star fa-fw" aria-hidden="true"></i><span class="d-none d-lg-inline-flex ml-1">[*source/sources]1</span></a>
-        <a class="nav-item nav-link px-2 py-1" href="#comments" title="[*comment]1"><i class="fa fa-file-alt fa-fw" aria-hidden="true"></i><span class="d-none d-lg-inline-flex ml-1">[*comment]</span></a>
+        <a class="nav-item nav-link px-2 py-1" href="#comments" title="[*comment]1"><i class="fa fa-file-lines fa-fw" aria-hidden="true"></i><span class="d-none d-lg-inline-flex ml-1">[*comment]</span></a>
       </nav>
     </nav>
   </div>
@@ -217,17 +217,17 @@
         <input type="text" class="form-control mr-auto" name="xvar_dd" id="xvar_dd" value="%xx.create.kind_day;" placeholder="[dd/mm/yyyy]0" %day_input;>
         <label for="xvar_mm" class="col-form-label%if;(verbose=true) sr-only%end;">[year/month/day]1</label>
         <input type="text" class="form-control mr-auto" name="xvar_mm" id="xvar_mm" value="%xx.create.kind_month;" placeholder="[dd/mm/yyyy]1" %month_input;>
-        <label for="xvar=yyyy" class="col-form-label%if;(verbose=true) sr-only%end;">[year/month/day]0</label>
+        <label for="xvar_yyyy" class="col-form-label%if;(verbose=true) sr-only%end;">[year/month/day]0</label>
         <input type="text" class="form-control mr-auto" name="xvar_yyyy" id="xvar_yyyy" value="%xx.create.kind_year;" placeholder="[dd/mm/yyyy]2" %year_input;>
       %elseif;([!dates order]0="mmddyyyy")
         <label for="xvar_mm" class="col-form-label%if;(verbose=true) sr-only%end;">[year/month/day]1</label>
         <input type="text" class="form-control mr-auto" name="xvar_mm" id="xvar_mm" value="%xx.create.kind_month;" placeholder="[dd/mm/yyyy]1" %month_input;>
         <label for="xvar_dd" class="col-form-label%if;(verbose=true) sr-only%end;">[year/month/day]2</label>
         <input type="text" class="form-control mr-auto" name="xvar_dd" id="xvar_dd" value="%xx.create.kind_day;" placeholder="[dd/mm/yyyy]0" %day_input;>
-        <label for="xvar=yyyy" class="col-form-label%if;(verbose=true) sr-only%end;">[year/month/day]0</label>
+        <label for="xvar_yyyy" class="col-form-label%if;(verbose=true) sr-only%end;">[year/month/day]0</label>
         <input type="text" class="form-control mr-auto" name="xvar_yyyy" id="xvar_yyyy" value="%xx.create.kind_year;" placeholder="[dd/mm/yyyy]2" %year_input;>
       %else;
-        <label for="xvar=yyyy" class="col-form-label%if;(verbose=true) sr-only%end;">[year/month/day]0</label>
+        <label for="xvar_yyyy" class="col-form-label%if;(verbose=true) sr-only%end;">[year/month/day]0</label>
         <input type="text" class="form-control mr-auto" name="xvar_yyyy" id="xvar_yyyy" value="%xx.create.kind_year;" placeholder="[dd/mm/yyyy]2" %year_input;>
         <label for="xvar_mm" class="col-form-label%if;(verbose=true) sr-only%end;">[year/month/day]1</label>
         <input type="text" class="form-control mr-auto" name="xvar_mm" id="xvar_mm" value="%xx.create.kind_month;" placeholder="[dd/mm/yyyy]1" %month_input;>
@@ -260,7 +260,8 @@
 
 %define;parent(xcnt,xx,psex)
   <div class="row%if;(xcnt>1) mt-2%end;">
-   <label for="paxcnt_fn" class="col-sm-2 col-form-label">[*first name/first names]0 <span class="font-weight-bold text-uppercase">
+   <label for="paxcnt_fn" class="col-sm-2 col-form-label">%nn;
+     [*first name/first names]0 <span class="font-weight-bold text-uppercase">
      (%if;(xx.first_name!="" or xx.surname!="")%apply;nth_c%with;[M/F]0[M/F]1N%and;psex%end;
       %else;%if;(xcnt=1)[M/F]0%else;[M/F]1%end;%end;)</span></label>
     <div class="col-sm-8">
@@ -418,7 +419,7 @@
           <a href="%prefix_base_password;m=MOD_IND&i=%fwitness.index;" title="[*modify::person/persons]0
             %fwitness.first_name;%if;(fwitness.occ!="").%fwitness.occ%end; %fwitness.surname;"
             aria-label="%apply;nth_c%with;[M/F]0[M/F]1N%and;%fwitness.sex;%end;">
-            <i class="fa fa-user-edit fa-fw %if;(fwitness.sex=1)fe%end;male ml-2 mr-1" aria-hidden="true"></i>
+            <i class="fa fa-user-pen fa-fw %if;(fwitness.sex=1)fe%end;male ml-2 mr-1" aria-hidden="true"></i>
             [*modify] %apply;nth%with;[nth]%and;%wcnt;%end; [witness/witness/witnesses]0</a>
           </a>
         %end;
@@ -520,7 +521,7 @@
 %end;
 
 %define;card_header(xx,yy)
-  <h3 class="card-header pt-1 pb-0 text-center" id="xx"><label for="xx">[*yy]1</label></h3>
+  <h3 class="card-header pt-1 pb-0 text-center" id="xx" aria-label="§ [*yy]1">[*yy]1</h3>
 %end;
 
 <h1%if;((evar.m="ADD_FAM" or evar.m="ADD_FAM_OK") and evar.ip="") class="mt-5"%end;>%nn;
@@ -631,7 +632,7 @@
 %define;invert_children(xcnt)
   <div class="form-inline col-3">
     <div class="input-group">
-      <label class="btn btn-outline-primary" title="[*invert] [child/children]0 %expr(xcnt-1) [and] xcnt"><span class="far fa-user"></span> %expr(xcnt-1) <span class="fa fa-exchange-alt mx-2"></span> <span class="far fa-user"></span> xcnt
+      <label class="btn btn-outline-primary" title="[*invert] [child/children]0 %expr(xcnt-1) [and] xcnt"><span class="far fa-user"></span> %expr(xcnt-1) <span class="fa fa-right-left mx-2"></span> <span class="far fa-user"></span> xcnt
         <input class="ml-2" type="checkbox" name="inv_chxcnt" value="on">
       </label>
       <div class="input-group-append">
@@ -671,8 +672,8 @@
       %if;(child.index!="-1")
         <a href="%prefix_base_password;m=MOD_IND&i=%child.index;" title="[*modify::person/persons]0
           %child.first_name;%if;(child.occ!="").%child.occ%end; %child.surname;"
-          aria-hidden="true" arial-label="%apply;nth_c%with;[M/F]0[M/F]1N%and;%child.sex;%end;">
-          <i class="fa fa-user-edit fa-fw %if;(child.sex=1)fe%end;male ml-2 mr-1"></i>
+          aria-hidden="true" aria-label="%apply;nth_c%with;[M/F]0[M/F]1N%and;%child.sex;%end;">
+          <i class="fa fa-user-pen fa-fw %if;(child.sex=1)fe%end;male ml-2 mr-1"></i>
           [*modify] %apply;nth%with;[nth]%and;%cnt;%end; [child/children]0</a>
       %end;
     </div>

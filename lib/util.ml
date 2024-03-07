@@ -383,7 +383,7 @@ let string_of_ctime conf =
 
 let html ?(content_type = "text/html") conf =
   let charset = if conf.charset = "" then "utf-8" else conf.charset in
-  if not conf.cgi then Output.header conf "Server: GeneWeb/%s" Version.txt;
+  if not conf.cgi then Output.header conf "Server: GeneWeb/%s" Version.ver;
   Output.header conf "Date: %s" (string_of_ctime conf);
   Output.header conf "Connection: close";
   Output.header conf "Content-type: %s; charset=%s" content_type charset
@@ -407,6 +407,7 @@ let commd ?(excl = []) ?(trim = true) ?(pwd = true) ?(henv = true)
           || (trim && (k = "oc" || k = "ocz") && (v :> string) = "0")
           || (v :> string) = ""
           || k = "b"
+          || (k = "lang" && conf.default_lang = (v :> string))
         then c
         else c ^^^ k ^<^ "=" ^<^ (v :> Adef.escaped_string) ^>^ "&")
   in
@@ -600,13 +601,23 @@ let safe_html_aux escape_text s =
 let safe_html s =
   Adef.safe (safe_html_aux (fun s -> (escape_html s :> string)) s)
 
-(* Version 1 => moche *)
-let clean_html_tags s l =
-  List.fold_left
-    (fun s html_tag -> Str.global_replace (Str.regexp html_tag) "&nbsp;" s)
-    s l
+(* Clean HTML tags from a string. Block tags are replaced by a space,
+   and inline tags are replaced by an empty string. *)
+let clean_html_tags s =
+  let open Str in
+  let tag_pattern tag = Printf.sprintf "</?%s */?>" tag in
+  let rep_block_tag s tag = global_replace (regexp (tag_pattern tag)) " " s in
+  let rep_inline_tag s tag = global_replace (regexp (tag_pattern tag)) "" s in
+  let block_tags = [ "br"; "div"; "h\\d"; "p"; "pre"; "ol"; "li"; "ul" ] in
+  let inline_tags = [ "a"; "em"; "span"; "strong"; "sub"; "sup" ] in
+  let s = List.fold_left rep_block_tag s block_tags in
+  let s = List.fold_left rep_inline_tag s inline_tags in
+  let s = global_replace (regexp " +") " " s in
+  s
 
 let clean_comment_tags s = Str.global_replace (Str.regexp "<!--.*-->") "" s
+let uri_encode s = Uri.pct_encode ~component:`Query s
+let uri_decode s = try Uri.pct_decode s with _ -> s
 
 let hidden_textarea conf k v =
   Output.print_sstring conf {|<textarea style="display:none;" name="|};
@@ -2448,6 +2459,12 @@ let print_tips_relationship conf =
   if p_getenv conf.env "em" = Some "R" || p_getenv conf.env "m" = Some "C" then
     Utf8.capitalize_fst (transl conf "select person to compute relationship")
     |> Adef.safe |> gen_print_tips conf
+
+let images_prefix conf =
+  let s =
+    if conf.cgi then Adef.escaped conf.images_prefix else Adef.escaped "images"
+  in
+  (s :> string)
 
 (* ********************************************************************** *)
 (*  [Fonc] display_options : config -> string                             *)

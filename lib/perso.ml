@@ -1362,12 +1362,7 @@ let date_aux conf p_auth date =
 
 let get_marriage_witnesses fam =
   let fevents = Gwdb.get_fevents fam in
-  let marriages =
-    List.filter (fun fe -> fe.efam_name = Efam_Marriage) fevents
-  in
-  let witnesses =
-    List.map (fun marriage -> marriage.efam_witnesses) marriages
-  in
+  let witnesses = List.map (fun marriage -> marriage.efam_witnesses) fevents in
   witnesses |> Array.concat
 
 let get_nb_marriage_witnesses_of_kind fam wk =
@@ -1606,7 +1601,10 @@ and eval_simple_str_var conf base env (p, p_auth) = function
           l := SortedList.empty;
           null_val
       | _ -> raise Not_found)
-  | "family_cnt" -> string_of_int_env "family_cnt" env
+  | "family_cnt" -> (
+      match get_env "family_cnt" env with
+      | Vint x -> string_of_int x |> str_val
+      | _ -> null_val)
   | "first_name_alias" -> (
       match get_env "first_name_alias" env with
       | Vstring s -> s |> Util.escape_html |> safe_val
@@ -1984,6 +1982,10 @@ and eval_compound_var conf base env ((a, _) as ep) loc = function
       match get_env "event_witness_kind" env with
       | Vstring s -> VVstring s
       | _ -> raise Not_found)
+  | "witness_kind" :: _ -> (
+      match get_env "witness_kind" env with
+      | Vstring s -> VVstring s
+      | _ -> raise Not_found)
   | "family" :: sl -> (
       (* TODO ???
          let mode_local =
@@ -2223,15 +2225,6 @@ and eval_compound_var conf base env ((a, _) as ep) loc = function
           let np_auth = authorized_age conf base np in
           eval_person_field_var conf base env (np, np_auth) loc sl
       | None -> raise Not_found)
-  | [ "random"; "init" ] ->
-      Random.self_init ();
-      VVstring ""
-  | [ "random"; "bits" ] -> (
-      try VVstring (string_of_int (Random.bits ()))
-      with Failure _ | Invalid_argument _ -> raise Not_found)
-  | [ "random"; s ] -> (
-      try VVstring (string_of_int (Random.int (int_of_string s)))
-      with Failure _ | Invalid_argument _ -> raise Not_found)
   | "related" :: sl -> (
       match get_env "rel" env with
       | Vrel ({ r_type = rt }, Some p) ->
@@ -4492,7 +4485,7 @@ let print_foreach conf base print_ast eval_expr =
       | Epers_Death -> "death_witness"
       | Epers_Baptism -> "batism_witness"
       | Epers_Birth -> "birth_witness"
-      | _ -> "" (* TODO: ? *)
+      | _ -> "witness"
     in
     List.iter
       (fun (name, _, _, _, _, wl, _) ->
@@ -4575,14 +4568,21 @@ let print_foreach conf base print_ast eval_expr =
         let _ =
           Array.fold_left
             (fun (i, first) (ip, wk) ->
-              if wk = witness_kind then (
-                let p = pget conf base ip in
-                let env =
-                  ("witness", Vind p) :: ("first", Vbool first) :: env
-                in
+              let p = pget conf base ip in
+              (* TODO if witness_kind = Witness, we might want wk = "" *)
+              let wks =
+                if witness_kind = Witness && wk = Witness then ""
+                else (Util.string_of_witness_kind conf (get_sex p) wk :> string)
+              in
+              let env =
+                ("witness", Vind p) :: ("first", Vbool first)
+                :: ("witness_kind", Vstring wks)
+                :: env
+              in
+              if witness_kind = Witness || witness_kind = wk then (
                 List.iter (print_ast env ep) al;
                 (i + 1, false))
-              else (i + 1, first))
+              else (i, first))
             (0, true)
             (get_marriage_witnesses fam)
         in
@@ -4597,7 +4597,7 @@ let print_foreach conf base print_ast eval_expr =
       List.iter
         (fun ic ->
           let c = pget conf base ic in
-          (* TODOWHY: only on Male? probably bugged on same sex or neuter couples *)
+          (* TODO WHY: only on Male? probably bugged on same sex or neuter couples *)
           if get_sex c = Male then
             Array.iter
               (fun ifam ->
@@ -5255,11 +5255,10 @@ let eval_predefined_apply conf env f vl =
         let m = List.fold_left max (-max_int) sl in
         string_of_int m
       with Failure _ -> raise Not_found)
-  | "clean_html_tags", [ s ] ->
-      (* On supprime surtout les balises qui peuvent casser la mise en page. *)
-      Util.clean_html_tags s
-        [ "<br */?>"; "</?p>"; "</?div>"; "</?span>"; "</?pre>" ]
+  | "clean_html_tags", [ s ] -> Util.clean_html_tags s
   | "clean_comment_tags", [ s ] -> Util.clean_comment_tags s
+  | "uri_encode", [ s ] -> Util.uri_encode s
+  | "uri_decode", [ s ] -> Util.uri_decode s
   | _ -> raise Not_found
 
 let gen_interp_templ ?(no_headers = false) menu title templ_fname conf base p =

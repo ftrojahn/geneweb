@@ -21,7 +21,7 @@ let gen_print_link_to_welcome f conf _right_aligned =
   Output.print_string conf (Util.commd ~senv:false conf);
   Output.print_sstring conf {|" title="|};
   Output.print_sstring conf (Utf8.capitalize (Util.transl conf "home"));
-  Output.print_sstring conf {|"><i class="fa fa-home fa-fw fa-sm"></i></a>|};
+  Output.print_sstring conf {|"><i class="fa fa-house fa-fw fa-sm"></i></a>|};
   let str = link_to_referer conf in
   if (str :> string) <> "" then Output.print_string conf str;
   Output.print_sstring conf "</div>"
@@ -47,8 +47,8 @@ let header_without_http_nor_home conf title =
 <link rel="apple-touch-icon" href="%s/favicon_gwd.png">
 |}
       conf.charset
-      (Image.prefix conf :> string)
-      (Image.prefix conf :> string)
+      (Util.images_prefix conf :> string)
+      (Util.images_prefix conf :> string)
   in
   Output.print_sstring conf str1;
   title true;

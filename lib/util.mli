@@ -38,8 +38,10 @@ val update_wf_trace : config -> string -> unit
 val get_referer : config -> Adef.escaped_string
 (** Get referer (the page you came from to the current page) page from HTTP request *)
 
-val clean_html_tags : string -> string list -> string
+val clean_html_tags : string -> string
 val clean_comment_tags : string -> string
+val uri_encode : string -> string
+val uri_decode : string -> string
 
 val html : ?content_type:string -> config -> unit
 (** Prints HTTP response headers with giving content type (default : {i text/html}) on the socket. *)
@@ -459,6 +461,9 @@ val gen_print_tips : config -> Adef.safe_string -> unit
 
 val print_tips_relationship : config -> unit
 (** Print a tip that tells to {i Click an individual below to calculate the family link.} *)
+
+val images_prefix : config -> string
+(** get value of images_prefix *)
 
 val get_opt : config -> string -> bool -> bool
 (** get option value for evar "im", "sp", "ma". Default value is defined by third param *)

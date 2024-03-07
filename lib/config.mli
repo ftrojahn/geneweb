@@ -67,6 +67,7 @@ type config = {
   lang : string;
   vowels : string list;
   default_lang : string;
+  browser_lang : string;
   default_sosa_ref : iper * Gwdb.person option;
   multi_parents : bool;
   authorized_wizards_notes : bool;
@@ -82,6 +83,7 @@ type config = {
   no_image : bool;
   no_note : bool;
   bname : string;
+  nb_of_persons : int;
   cgi_passwd : string;
   env : env;
   mutable senv : env;
