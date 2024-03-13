@@ -2053,6 +2053,10 @@ let main () =
     ; ("-daemon", Arg.Set daemon, " Unix daemon mode.")
     ; ("-no-fork", Arg.Set Wserver.no_fork, " Prevent forking processes")
 #endif
+    ; ("-cache-in-memory", Arg.String (fun s ->
+        let _db : Gwdb_driver.base = Gwdb.open_base ~keep_in_memory:true s in
+        ()
+      ), "<DATABASE> Preload this database in memory")
     ]
   in
   let speclist = List.sort compare speclist in
