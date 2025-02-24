@@ -82,6 +82,7 @@ start() {
 	-log ${GENEWEB_HOME}/log/gwd.log \
 	$AUTH_ARG 2>&1
 	gwlaunch_log "-- Started gwd!"
+
 	gwlaunch_log "Launch complete! -------------------------------------------------------"
 
 	tail -f ${GENEWEB_HOME}/log/gwsetup.log | sed "s/^/$(date +%Y-%m-%d_%H:%M:%S) gwsetup: /" & \
