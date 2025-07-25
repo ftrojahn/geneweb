@@ -1893,12 +1893,12 @@ span.notesourcecolor {
   background-color: #f8f9fa;
   vertical-align: middle;
   white-space: nowrap;
+  border-bottom: 0px;
 }
-.rm-bhead {
+.rm-thead {
   background-color: #f8f9fa;
   font-weight: bold;
-  border-top: 2px solid #dee2e6;
-  min-width: 60px;
+  border-top: 0px;
 }
 .rm-cell {
   background-color: #fff;
@@ -1913,6 +1913,7 @@ span.notesourcecolor {
   color: white;
   vertical-align: middle !important;
   font-weight: bold;
+  min-width: 60px;
 }
 .rm-empty {
   background-color: transparent;
