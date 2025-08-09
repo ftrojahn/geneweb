@@ -43,7 +43,7 @@ let () =
       line
     with
     | ("Linux" | "Darwin" | "FreeBSD") as os_type ->
-        (os_type, " -D UNIX", "", "/bin/rm -f", "strip")
+        (os_type, " -D UNIX", "", "rm -f", "strip")
     | _ -> ("Win", " -D WINDOWS", ".exe", "rm -f", "true")
   in
   let ancient_lib, ancient_file =
